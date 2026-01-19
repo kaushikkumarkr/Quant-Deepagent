@@ -39,6 +39,12 @@ graph TB
         CastMCP["Forecast Analytics MCP"]
     end
 
+    subgraph "Observability"
+        Phoenix["Arize Phoenix (Trace Server)"]
+        UI["Dashboard (:6006)"]
+        Phoenix --> UI
+    end
+
     CLI --> Router
     Verify --> Router
     Router --> Main
@@ -51,6 +57,10 @@ graph TB
     FA -- "MCP Protocol (StdIO)" --> FredMCP
     SA -- "MCP Protocol (StdIO)" --> SentMCP
     QA -- "MCP Protocol (StdIO)" --> CastMCP
+
+    %% Auto-Instrumentation Hooks
+    Main -. "OpenTelemetry Traces" .-> Phoenix
+    YahooMCP -. "Tool Spans" .-> Phoenix
 ```
 
 ## 🔄 Agent Workflow
@@ -250,6 +260,16 @@ Enter ticker or query: Analyze NVDA
 🔹 Final Report
 ...
 ```
+
+## 🔬 Observability (Arize Phoenix)
+The system includes built-in local tracing.
+
+1.  **Run the CLI**: `python scripts/cli.py`
+2.  **View Dashboard**: Open `http://localhost:6006`
+3.  **Features**:
+    *   Visualize full agent execution trees.
+    *   Inspect raw JSON inputs/outputs for every MCP tool call.
+    *   Debug latency and errors.
 
 ## 🧪 Testing
 
