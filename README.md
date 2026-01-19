@@ -8,25 +8,20 @@ A sophisticated **Multi-Agent AI Trading Research System** built with [LangChain
 graph TB
     subgraph "User Interface"
         CLI["CLI (scripts/cli.py)"]
+        Verify["Verification Scripts"]
     end
 
-    subgraph "LLM Router"
+    subgraph "LLM Infrastructure"
         Router["LLM Router"]
-        LMStudio["LM Studio (Local)"]
-        MLX["MLX (Local - Legacy)"]
-        Groq["Groq API"]
+        LMStudio["LM Studio (Local Host)"]
         Router --> LMStudio
-        Router --> MLX
-        Router --> Groq
     end
 
     subgraph "DeepAgents Orchestration"
         Main["Main Coordinator Agent"]
         Todo["TodoListMiddleware"]
-        FS["FilesystemMiddleware"]
         Sub["SubAgentMiddleware"]
         Main --> Todo
-        Main --> FS
         Main --> Sub
     end
 
@@ -37,47 +32,25 @@ graph TB
         CR["Critique Reviewer"]
     end
 
-    subgraph "Financial Tools"
-        YF["Yahoo Finance"]
-        SEC["SEC EDGAR"]
-        FRED["FRED API"]
-        News["NewsAPI"]
-    end
-
-    subgraph "Analysis Tools"
-        Prophet["Prophet Forecasting"]
-        Tech["Technical Indicators"]
-        FinBERT["FinBERT Sentiment"]
-    end
-
-    subgraph "MCP Servers"
+    subgraph "MCP Server Layer (FastMCP)"
         YahooMCP["Yahoo Finance MCP"]
         FredMCP["FRED Economics MCP"]
         SentMCP["Sentiment Analysis MCP"]
         CastMCP["Forecast Analytics MCP"]
     end
 
-    subgraph "RAG Pipeline"
-        Embed["Embeddings"]
-        Chunk["Chunking"]
-        Vector["ChromaDB"]
-        Retrieve["Hybrid Retriever"]
-    end
-
     CLI --> Router
+    Verify --> Router
     Router --> Main
     Sub --> FA
     Sub --> SA
     Sub --> QA
     Sub --> CR
-    FA --> YahooMCP
-    FA --> FredMCP
-    SA --> SentMCP
-    QA --> CastMCP
-    SEC --> Chunk
-    Chunk --> Embed
-    Embed --> Vector
-    Vector --> Retrieve
+    
+    FA -- "MCP Protocol (StdIO)" --> YahooMCP
+    FA -- "MCP Protocol (StdIO)" --> FredMCP
+    SA -- "MCP Protocol (StdIO)" --> SentMCP
+    QA -- "MCP Protocol (StdIO)" --> CastMCP
 ```
 
 ## 🔄 Agent Workflow
