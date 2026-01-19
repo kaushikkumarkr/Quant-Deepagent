@@ -20,6 +20,12 @@ class LLMRouter:
         Returns the LLM provider.
         Prioritizes LM Studio (local) as requested.
         """
+        # 0. Try Groq (Cloud - High Performance)
+        llm = self.groq.get_llm()
+        if llm:
+            logger.info("Routing request to Groq (Cloud).")
+            return llm
+
         # 1. Try LM Studio (http://127.0.0.1:1234)
         llm = self.lmstudio.get_llm()
         if llm:

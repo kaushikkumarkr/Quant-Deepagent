@@ -7,14 +7,11 @@ from src.agents.prompts.critique_prompt import CRITIQUE_PROMPT
 from src.llm.router import router
 from src.agents.state import ResearchState
 
+from src.agents.tools_registry import FUNDAMENTALS_TOOLS, SENTIMENT_TOOLS, FORECAST_TOOLS
+
 def create_graph():
     """
     Create the Multi-Agent System using DeepAgents with full middleware support.
-    - TodoListMiddleware: Enables write_todos/read_todos for task planning
-    - FilesystemMiddleware: Enables file operations
-    - SubAgentMiddleware: Enables task delegation
-    
-    Using MLX local model for full offline operation.
     """
     llm = router.get_llm()
     
@@ -24,19 +21,19 @@ def create_graph():
             "name": "fundamentals_analyst", 
             "description": "Analyzes financial health, valuation metrics, and macro context for a stock.",
             "system_prompt": FUNDAMENTALS_PROMPT,
-            "tools": []
+            "tools": FUNDAMENTALS_TOOLS
         },
         {
             "name": "sentiment_analyst",
             "description": "Analyzes market news and sentiment for a stock.",
             "system_prompt": SENTIMENT_PROMPT,
-            "tools": []
+            "tools": SENTIMENT_TOOLS
         },
         {
             "name": "quantitative_analyst",
             "description": "Performs price forecasting and technical analysis for a stock.",
             "system_prompt": FORECAST_PROMPT,
-            "tools": []
+            "tools": FORECAST_TOOLS
         },
         {
             "name": "critique_reviewer",

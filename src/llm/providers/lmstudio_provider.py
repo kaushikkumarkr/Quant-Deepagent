@@ -11,7 +11,7 @@ class LMStudioProvider:
         self.base_url = "http://127.0.0.1:1234/v1"
         self.api_key = "lm-studio" # LM Studio uses a dummy key
         # We can probably fetch the loaded model or just use a generic name
-        self.model = "gpt-3.5-turbo" # Trick for compatibility 
+        self.model = "Meta-Llama-3.1-8B-Instruct-GGUF" 
 
     def is_available(self) -> bool:
         try:

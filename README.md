@@ -187,12 +187,12 @@ python scripts/cli.py
 quantmind/
 ├── src/
 │   ├── agents/              # DeepAgents multi-agent system
-│   │   ├── graph.py         # Main agent graph
+│   │   ├── graph.py         # Main agent graph (Config + Orchestration)
 │   │   ├── prompts/         # Agent system prompts
-│   │   └── subagents/       # Specialized agent nodes
+│   │   └── tools_registry.py # Tools Registry (MCP Adapters)
 │   ├── llm/
 │   │   ├── router.py        # LLM provider routing
-│   │   └── providers/       # LM Studio wrapper
+│   │   └── providers/       # Wrappers (Groq, LM Studio, etc.)
 │   ├── mcp_servers/         # FastMCP Server Implementations
 │   │   ├── yahoo_finance.py
 │   │   ├── sentiment.py
@@ -200,12 +200,11 @@ quantmind/
 │   │   └── fred.py
 │   └── utils/
 │       ├── mcp_client.py    # Client for StdIO MCP communication
-│       └── logging.py
+│       └── observability.py # Arize Phoenix Tracing
 ├── scripts/
 │   ├── cli.py               # Interactive CLI
-│   ├── verify_mcp_raw.py    # Test data flow without LLM
-│   ├── verify_workflow_manual.py # Test agent orchestration
-│   └── verify_*.py          # Comprehensive test suite
+│   ├── verify_full_trace.py # End-to-End DeepAgents Verification
+│   └── verify_mcp_raw.py    # Low-level Data Layer Verification
 ├── tests/                   # Integration tests
 └── pyproject.toml
 
@@ -223,11 +222,12 @@ This project uses [LangChain DeepAgents](https://github.com/langchain-ai/deepage
 
 ### LLM Router Priority
 
-The router selects LLMs based on availability and suitability:
+The router selects LLMs based on availability and suitability.
+**Current Priority**: `Groq` (Cloud) > `LM Studio` (Local) > `MLX` (Local).
 
 ```python
 # src/llm/router.py
-Priority: MLX (local) > Groq > Gemini
+Priority: Groq > LM Studio > MLX
 ```
 
 ### Local LLM (LM Studio)
