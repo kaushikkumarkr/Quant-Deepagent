@@ -174,29 +174,30 @@ python scripts/cli.py
 
 ## 📁 Project Structure
 
-```
 quantmind/
 ├── src/
 │   ├── agents/              # DeepAgents multi-agent system
 │   │   ├── graph.py         # Main agent graph
-│   │   ├── tools.py         # LangChain tool wrappers
 │   │   ├── prompts/         # Agent system prompts
 │   │   └── subagents/       # Specialized agent nodes
 │   ├── llm/
 │   │   ├── router.py        # LLM provider routing
-│   │   └── providers/       # Groq, Gemini, MLX wrappers
-│   ├── tools/
-│   │   ├── financial/       # Yahoo, SEC, FRED
-│   │   ├── sentiment/       # FinBERT, NewsAPI
-│   │   ├── forecast/        # Prophet, Technical
-│   │   └── search/          # Web search
-│   ├── rag/                  # RAG pipeline
-│   └── utils/                # Logging, cache, retry
+│   │   └── providers/       # LM Studio wrapper
+│   ├── mcp_servers/         # FastMCP Server Implementations
+│   │   ├── yahoo_finance.py
+│   │   ├── sentiment.py
+│   │   ├── forecast.py
+│   │   └── fred.py
+│   └── utils/
+│       ├── mcp_client.py    # Client for StdIO MCP communication
+│       └── logging.py
 ├── scripts/
-│   └── cli.py               # Interactive CLI
-├── tests/                    # Unit & integration tests
+│   ├── cli.py               # Interactive CLI
+│   ├── verify_mcp_raw.py    # Test data flow without LLM
+│   ├── verify_workflow_manual.py # Test agent orchestration
+│   └── verify_*.py          # Comprehensive test suite
+├── tests/                   # Integration tests
 └── pyproject.toml
-```
 
 ## 🎯 DeepAgents Middleware
 
