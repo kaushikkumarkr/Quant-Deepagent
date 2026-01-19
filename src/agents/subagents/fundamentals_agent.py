@@ -3,9 +3,9 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from src.agents.state import ResearchState
 from src.agents.prompts.fundamentals_prompt import FUNDAMENTALS_PROMPT
 from src.llm.router import router
-from src.tools.financial.yahoo_finance import YahooFinanceTool
-from src.tools.financial.fred import FREDTool
 from src.utils.logging import setup_logging
+from src.utils.mcp_client import call_mcp_tool
+from typing import Any
 
 logger = setup_logging(__name__)
 
@@ -16,31 +16,39 @@ async def fundamentals_agent_node(state: ResearchState):
     ticker = state['ticker']
     logger.info(f"Fundamentals Agent starting for {ticker}...")
     
-    # 1. Gather Data
-    yf = YahooFinanceTool()
-    fred = FREDTool()
+    # Paths to MCP servers
+    # Assumes running from project root
+    yahoo_mcp = "src/mcp_servers/yahoo_finance.py"
+    fred_mcp = "src/mcp_servers/fred.py"
     
-    info = yf.get_stock_info(ticker)
-    financials = yf.get_financials(ticker)
-    # earnings = yf.get_earnings(ticker) 
+    # 1. Gather Data via MCP
+    logger.info("Calling Yahoo Finance MCP...")
+    info = await call_mcp_tool(yahoo_mcp, "get_stock_info", ticker=ticker)
+    financials = await call_mcp_tool(yahoo_mcp, "get_financials", ticker=ticker)
     
-    # GDP and Unemployment as macro context
-    gdp = fred.get_economic_data("GDP")
-    unrate = fred.get_economic_data("UNRATE")
+    logger.info("Calling FRED MCP...")
+    gdp = await call_mcp_tool(fred_mcp, "get_economic_data", series_id="GDP")
+    unrate = await call_mcp_tool(fred_mcp, "get_economic_data", series_id="UNRATE")
     
     # 2. Prepare Context for LLM
+    # Helper to safe get
+    def get_val(data, key, default="N/A"):
+        if isinstance(data, dict):
+            return data.get(key, default)
+        return default
+
     context = f"""
     Ticker: {ticker}
     
     Stock Info:
-    {json.dumps(info, indent=2)}
+    {json.dumps(info, indent=2) if isinstance(info, dict) else info}
     
     Financials (Partial):
-    Income: {list(financials.get('income_statement', {}).keys())[:5]}... use tools for full detail if needed.
+    Income: {list(financials.get('income_statement', {}).keys())[:5] if isinstance(financials, dict) and 'income_statement' in financials else "N/A"}... 
     
     Macro Data:
-    GDP: {gdp.get('latest_value')} ({gdp.get('latest_date')})
-    Unemployment: {unrate.get('latest_value')} ({unrate.get('latest_date')})
+    GDP: {get_val(gdp, 'latest_value')} ({get_val(gdp, 'latest_date')})
+    Unemployment: {get_val(unrate, 'latest_value')} ({get_val(unrate, 'latest_date')})
     """
     
     # 3. Call LLM for Analysis

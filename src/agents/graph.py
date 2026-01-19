@@ -1,5 +1,4 @@
 from deepagents import create_deep_agent
-from src.agents.tools import fundamentals_tools, sentiment_tools, forecast_tools
 from src.agents.prompts.main_prompt import MAIN_AGENT_PROMPT
 from src.agents.prompts.fundamentals_prompt import FUNDAMENTALS_PROMPT
 from src.agents.prompts.sentiment_prompt import SENTIMENT_PROMPT
@@ -25,19 +24,19 @@ def create_graph():
             "name": "fundamentals_analyst", 
             "description": "Analyzes financial health, valuation metrics, and macro context for a stock.",
             "system_prompt": FUNDAMENTALS_PROMPT,
-            "tools": fundamentals_tools
+            "tools": []
         },
         {
             "name": "sentiment_analyst",
             "description": "Analyzes market news and sentiment for a stock.",
             "system_prompt": SENTIMENT_PROMPT,
-            "tools": sentiment_tools
+            "tools": []
         },
         {
             "name": "quantitative_analyst",
             "description": "Performs price forecasting and technical analysis for a stock.",
             "system_prompt": FORECAST_PROMPT,
-            "tools": forecast_tools
+            "tools": []
         },
         {
             "name": "critique_reviewer",

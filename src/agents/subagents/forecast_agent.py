@@ -3,9 +3,8 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from src.agents.state import ResearchState
 from src.agents.prompts.forecast_prompt import FORECAST_PROMPT
 from src.llm.router import router
-from src.tools.forecast.prophet_forecast import ProphetTool
-from src.tools.forecast.technical_indicators import TechnicalAnalysis
 from src.utils.logging import setup_logging
+from src.utils.mcp_client import call_mcp_tool
 
 logger = setup_logging(__name__)
 
@@ -16,12 +15,14 @@ async def forecast_agent_node(state: ResearchState):
     ticker = state['ticker']
     logger.info(f"Forecast Agent starting for {ticker}...")
     
-    # 1. Gather Data
-    prophet = ProphetTool()
-    tech = TechnicalAnalysis()
+    mcp_server = "src/mcp_servers/forecast.py"
     
-    forecast = prophet.forecast_price(ticker)
-    indicators = tech.calculate_indicators(ticker)
+    # 1. Gather Data via MCP
+    logger.info("Calling Forecast MCP (Prophet)...")
+    forecast = await call_mcp_tool(mcp_server, "forecast_price", ticker=ticker)
+    
+    logger.info("Calling Forecast MCP (Technical Indicators)...")
+    indicators = await call_mcp_tool(mcp_server, "get_technical_indicators", ticker=ticker)
     
     # 2. Prepare Context
     context = f"""
