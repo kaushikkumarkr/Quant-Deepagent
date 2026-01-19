@@ -7,10 +7,12 @@ import os
 sys.path.insert(0, os.getcwd())
 
 from src.agents.graph import create_graph
+from src.utils.observability import setup_observability
 from langchain_core.messages import HumanMessage
 
 async def main():
     print("🚀 QuantMind CLI - Interactive Research Agent")
+    setup_observability()
     print("Type 'exit' or 'quit' to stop.")
     print("-" * 50)
     

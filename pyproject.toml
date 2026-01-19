@@ -39,7 +39,9 @@ dependencies = [
     "pytest",
     "pytest-asyncio",
     "mlx-lm",
-    "huggingface-hub"
+    "huggingface-hub",
+    "arize-phoenix",
+    "openinference-instrumentation-langchain"
 ]
 
 [build-system]
