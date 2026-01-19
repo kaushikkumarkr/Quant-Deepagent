@@ -12,12 +12,12 @@ graph TB
 
     subgraph "LLM Router"
         Router["LLM Router"]
-        MLX["MLX (Local)"]
+        LMStudio["LM Studio (Local)"]
+        MLX["MLX (Local - Legacy)"]
         Groq["Groq API"]
-        Gemini["Gemini API"]
+        Router --> LMStudio
         Router --> MLX
         Router --> Groq
-        Router --> Gemini
     end
 
     subgraph "DeepAgents Orchestration"
@@ -50,6 +50,13 @@ graph TB
         FinBERT["FinBERT Sentiment"]
     end
 
+    subgraph "MCP Servers"
+        YahooMCP["Yahoo Finance MCP"]
+        FredMCP["FRED Economics MCP"]
+        SentMCP["Sentiment Analysis MCP"]
+        CastMCP["Forecast Analytics MCP"]
+    end
+
     subgraph "RAG Pipeline"
         Embed["Embeddings"]
         Chunk["Chunking"]
@@ -63,13 +70,10 @@ graph TB
     Sub --> SA
     Sub --> QA
     Sub --> CR
-    FA --> YF
-    FA --> SEC
-    FA --> FRED
-    SA --> News
-    SA --> FinBERT
-    QA --> Prophet
-    QA --> Tech
+    FA --> YahooMCP
+    FA --> FredMCP
+    SA --> SentMCP
+    QA --> CastMCP
     SEC --> Chunk
     Chunk --> Embed
     Embed --> Vector
@@ -143,9 +147,9 @@ sequenceDiagram
 ### 🔌 LLM Providers
 | Provider | Model | Status |
 |----------|-------|--------|
-| MLX (Local) | Llama-3.1-8B-Instruct-4bit | ✅ Offline |
-| Groq | llama-3.3-70b-versatile | ✅ Fast |
-| Gemini | gemini-2.0-flash | ✅ Good tool support |
+| LM Studio (Local) | Any (via OpenAI Compat.) | ✅ Active |
+| MLX (Local) | Llama-3.1-8B-Instruct-4bit | ⚠️ Secondary |
+| Groq | llama-3.3-70b-versatile | ✅ Supported |
 
 ## 🚀 Quick Start
 
@@ -242,11 +246,11 @@ The router selects LLMs based on availability and suitability:
 Priority: MLX (local) > Groq > Gemini
 ```
 
-### MLX Model Selection
-
+### Local LLM (LM Studio)
+Ensure LM Studio is running on `http://localhost:1234/v1`. The router mimics OpenAI compatibility.
 ```python
 # src/config.py
-mlx_model = "mlx-community/Llama-3.1-8B-Instruct-4bit"
+lmstudio_url = "http://localhost:1234/v1"
 ```
 
 ## 📈 Example Output
