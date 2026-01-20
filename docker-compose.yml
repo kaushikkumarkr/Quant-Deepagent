@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  quantmind:
+    build: .
+    container_name: quantmind-core
+    volumes:
+      - .:/app # Bind mount for live reloading code changes
+      - ./data:/app/data # Persistence for RAG/Cache
+    environment:
+      - LM_STUDIO_URL=http://host.docker.internal:1234/v1
+      # Pass through API keys from host .env
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - NEWS_API_KEY=${NEWS_API_KEY}
+      - FRED_API_KEY=${FRED_API_KEY}
+      # PHOENIX CONFIG (connect to phoenix service below)
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006
+      - PHOENIX_PROJECT_NAME=quantmind-docker # Explicitly set project name
+      - YAHOO_MCP_URL=http://mcp-yahoo:8000/sse # Yahoo Finance
+      - FRED_MCP_URL=http://mcp-fred:8001/sse # FRED Economics
+      - SENTIMENT_MCP_URL=http://mcp-sentiment:8002/sse # News/Sentiment
+      - FORECAST_MCP_URL=http://mcp-forecast:8003/sse # Analytics/Prophet
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Allow access to LM Studio on host
+    tty: true # Keep container running for interactive CLI
+    init: true # Prevent zombie processes
+    depends_on:
+      - phoenix
+      - mcp-yahoo
+      - mcp-fred
+      - mcp-sentiment
+      - mcp-forecast
+
+  mcp-yahoo:
+    build: .
+    container_name: quantmind-mcp-yahoo
+    command: fastmcp run src/tools/financial/server.py --transport sse --port 8000 --host 0.0.0.0
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006
+    ports:
+      - "8000:8000"
+
+  mcp-fred:
+    build: .
+    container_name: quantmind-mcp-fred
+    command: fastmcp run src/tools/financial/server_fred.py --transport sse --port 8001 --host 0.0.0.0
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - FRED_API_KEY=${FRED_API_KEY}
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006
+    ports:
+      - "8001:8001"
+
+  mcp-sentiment:
+    build: .
+    container_name: quantmind-mcp-sentiment
+    command: fastmcp run src/tools/sentiment/server.py --transport sse --port 8002 --host 0.0.0.0
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - NEWS_API_KEY=${NEWS_API_KEY}
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006
+    ports:
+      - "8002:8002"
+
+  mcp-forecast:
+    build: .
+    container_name: quantmind-mcp-forecast
+    command: fastmcp run src/tools/forecast/server.py --transport sse --port 8003 --host 0.0.0.0
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006
+    ports:
+      - "8003:8003"
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: quantmind-phoenix
+    ports:
+      - "6006:6006" # UI Port
+    environment:
+      - PHOENIX_PORT=6006
+    volumes:
+      - ./data/phoenix:/root/.phoenix

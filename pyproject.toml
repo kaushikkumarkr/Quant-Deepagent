@@ -8,6 +8,7 @@ dependencies = [
     "langchain-groq",
     "langchain-google-genai",
     "langchain-ollama",
+    "langchain-openai",
     "langgraph",
     "deepagents",
     "pydantic",
@@ -38,10 +39,11 @@ dependencies = [
     "langfuse",
     "pytest",
     "pytest-asyncio",
-    "mlx-lm",
+    "mlx-lm; sys_platform == 'darwin'",
     "huggingface-hub",
     "arize-phoenix",
-    "openinference-instrumentation-langchain"
+    "openinference-instrumentation-langchain",
+    "fastmcp"
 ]
 
 [build-system]

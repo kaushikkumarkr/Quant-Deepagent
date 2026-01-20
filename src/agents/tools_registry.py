@@ -19,25 +19,25 @@ class ForecastInput(BaseModel):
 
 # Yahoo Finance
 async def get_stock_info(ticker: str) -> str:
-    return await call_mcp_tool("src/mcp_servers/yahoo_finance.py", "get_stock_info", ticker=ticker)
+    return await call_mcp_tool(os.getenv("YAHOO_MCP_URL", "src/tools/financial/server.py"), "get_stock_info", ticker=ticker)
 
 async def get_financials(ticker: str) -> str:
-    return await call_mcp_tool("src/mcp_servers/yahoo_finance.py", "get_financials", ticker=ticker)
+    return await call_mcp_tool(os.getenv("YAHOO_MCP_URL", "src/tools/financial/server.py"), "get_financials", ticker=ticker)
 
 async def get_earnings(ticker: str) -> str:
-    return await call_mcp_tool("src/mcp_servers/yahoo_finance.py", "get_earnings", ticker=ticker)
+    return await call_mcp_tool(os.getenv("YAHOO_MCP_URL", "src/tools/financial/server.py"), "get_earnings", ticker=ticker)
 
 # FRED
 async def get_economic_data(series_id: str) -> str:
-    return await call_mcp_tool("src/mcp_servers/fred.py", "get_economic_data", series_id=series_id)
+    return await call_mcp_tool(os.getenv("FRED_MCP_URL", "src/tools/financial/server_fred.py"), "get_economic_data", series_id=series_id)
 
 # Sentiment
 async def get_news_sentiment(ticker: str) -> str:
-    return await call_mcp_tool("src/mcp_servers/sentiment.py", "get_news_sentiment", ticker=ticker)
+    return await call_mcp_tool(os.getenv("SENTIMENT_MCP_URL", "src/tools/sentiment/server.py"), "get_news_sentiment", ticker=ticker, days=7)
 
 # Forecast
 async def forecast_price(ticker: str, periods: int = 30) -> str:
-    return await call_mcp_tool("src/mcp_servers/forecast.py", "forecast_price", ticker=ticker, periods=periods)
+    return await call_mcp_tool(os.getenv("FORECAST_MCP_URL", "src/tools/forecast/server.py"), "forecast_price", ticker=ticker, periods=periods)
 
 # --- Tool Definitions ---
 

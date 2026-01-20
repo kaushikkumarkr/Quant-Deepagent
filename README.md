@@ -1,293 +1,167 @@
-# 🧠 Quant-DeepAgent
+# 🧠 QuantMind: DeepAgents Financial Research System
 
-A sophisticated **Multi-Agent AI Trading Research System** built with [LangChain DeepAgents](https://github.com/langchain-ai/deepagents). This system orchestrates specialized AI agents to analyze stocks, perform sentiment analysis, forecast prices, and generate comprehensive investment reports.
+**QuantMind** is an advanced **Multi-Agent AI Research Platform** that autonomously performs institutional-grade financial analysis.
+
+Built on **LangChain DeepAgents** and a **Dockerized Microservices Architecture**, it orchestrates a team of specialized AI agents to analyze fundamentals, news sentiment, and technical forecasts in parallel, synthesizing their findings into comprehensive reports.
+
+---
 
 ## 🏗️ System Architecture
 
+The system operates as a **Distributed Cognitive Engine**. The "Brain" (DeepAgents) runs in one container, while the "Hands" (Tools) run as separate, secure microservices.
+
 ```mermaid
 graph TB
-    subgraph "User Interface"
-        CLI["CLI (scripts/cli.py)"]
-        Verify["Verification Scripts"]
+    subgraph "Host Machine"
+        LMStudio["LM Studio (LLM Provider)"]
+        Browser["User (Browser/CLI)"]
     end
 
-    subgraph "LLM Infrastructure"
-        Router["LLM Router"]
-        LMStudio["LM Studio (Local Host)"]
-        Router --> LMStudio
+    subgraph "Docker Cluster (quantmind-network)"
+        
+        subgraph "Brain: quantmind-core"
+            Router["LLM Router"]
+            Supervisor["Supervisor Agent"]
+            
+            subgraph "Sub-Agents"
+                Funds["Fundamentals Analyst"]
+                Sent["Sentiment Analyst"]
+                Quant["Quantitative Analyst"]
+                Crit["Critique Reviewer"]
+            end
+            
+            Router --> Supervisor
+            Supervisor --> Funds & Sent & Quant
+            Funds & Sent & Quant --> Crit
+        end
+
+        subgraph "Tools: Microservices Layer"
+            direction LR
+            Yahoo["mcp-yahoo (Port 8000)"]
+            Fred["mcp-fred (Port 8001)"]
+            News["mcp-sentiment (Port 8002)"]
+            Prophet["mcp-forecast (Port 8003)"]
+        end
+
+        subgraph "Observability"
+            Phoenix["Arize Phoenix (Port 6006)"]
+        end
     end
 
-    subgraph "DeepAgents Orchestration"
-        Main["Main Coordinator Agent"]
-        Todo["TodoListMiddleware"]
-        Sub["SubAgentMiddleware"]
-        Main --> Todo
-        Main --> Sub
-    end
-
-    subgraph "Specialized Sub-Agents"
-        FA["Fundamentals Analyst"]
-        SA["Sentiment Analyst"]
-        QA["Quantitative Analyst"]
-        CR["Critique Reviewer"]
-    end
-
-    subgraph "MCP Server Layer (FastMCP)"
-        YahooMCP["Yahoo Finance MCP"]
-        FredMCP["FRED Economics MCP"]
-        SentMCP["Sentiment Analysis MCP"]
-        CastMCP["Forecast Analytics MCP"]
-    end
-
-    subgraph "Observability"
-        Phoenix["Arize Phoenix (Trace Server)"]
-        UI["Dashboard (:6006)"]
-        Phoenix --> UI
-    end
-
-    CLI --> Router
-    Verify --> Router
-    Router --> Main
-    Sub --> FA
-    Sub --> SA
-    Sub --> QA
-    Sub --> CR
+    %% Connections
+    LMStudio <== "HTTP (OpenAI Compat)" ==> Router
     
-    FA -- "MCP Protocol (StdIO)" --> YahooMCP
-    FA -- "MCP Protocol (StdIO)" --> FredMCP
-    SA -- "MCP Protocol (StdIO)" --> SentMCP
-    QA -- "MCP Protocol (StdIO)" --> CastMCP
-
-    %% Auto-Instrumentation Hooks
-    Main -. "OpenTelemetry Traces" .-> Phoenix
-    YahooMCP -. "Tool Spans" .-> Phoenix
+    Funds -. "SSE (HTTP)" .-> Yahoo
+    Funds -. "SSE (HTTP)" .-> Fred
+    Sent -. "SSE (HTTP)" .-> News
+    Quant -. "SSE (HTTP)" .-> Prophet
+    
+    Supervisor -. "Traces" .-> Phoenix
+    Yahoo & Fred & News & Prophet -. "Tool Spans" .-> Phoenix
 ```
 
-## 🔄 Agent Workflow
+---
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant CLI
-    participant Main as Main Coordinator
-    participant Todo as TodoList
-    participant FA as Fundamentals Agent
-    participant SA as Sentiment Agent
-    participant QA as Quantitative Agent
-    participant CR as Critique Reviewer
+## 🤖 The Agent Team
 
-    User->>CLI: "Analyze NVDA"
-    CLI->>Main: Process Query
-    Main->>Todo: write_todos([tasks])
-    Main->>FA: task(fundamentals_analyst)
-    Main->>SA: task(sentiment_analyst)
-    Main->>QA: task(quantitative_analyst)
-    
-    par Parallel Execution
-        FA->>FA: Yahoo Finance, SEC, FRED
-        SA->>SA: NewsAPI, FinBERT
-        QA->>QA: Prophet, Technical Analysis
-    end
-    
-    FA-->>Main: Fundamentals Report
-    SA-->>Main: Sentiment Report
-    QA-->>Main: Forecast Report
-    
-    Main->>CR: task(critique_reviewer)
-    CR-->>Main: Reviewed Report
-    Main-->>CLI: Final Analysis
-    CLI-->>User: Display Results
-```
+| Agent | Persona | Responsibilities | Tools (Microservices) |
+|-------|---------|------------------|-----------------------|
+| **Supervisor** | *Hedge Fund Manager* | Planning, delegation, synthesis. | `None` (Orchestration) |
+| **Fundamentals** | *Equity Research Analyst* | Valuation (P/E, DCF), Financials (10-K), Macro. | `mcp-yahoo`, `mcp-fred` |
+| **Sentiment** | *News Analyst* | Market mood, headlines, social sentiment. | `mcp-sentiment` |
+| **Quantitative** | *Data Scientist* | Price forecasting (Prophet), Technicals (RSI/MACD). | `mcp-forecast` |
+| **Critique** | *Risk Manager* | Quality control, fact-checking, hallucination detection. | `None` (Pure LLM) |
 
-## ✨ Features
+---
 
-### 🤖 Multi-Agent System
-- **Main Coordinator**: Orchestrates sub-agents and synthesizes reports
-- **Fundamentals Analyst**: Financial health, valuation, SEC filings analysis
-- **Sentiment Analyst**: News sentiment via FinBERT, market mood
-- **Quantitative Analyst**: Price forecasting with Prophet, technical indicators
-- **Critique Reviewer**: Quality assurance and report refinement
+## 🚀 Quick Start (Docker)
 
-### 📊 Financial Data Tools
-| Tool | Source | Purpose |
-|------|--------|---------|
-| Yahoo Finance | `yfinance` | Stock prices, financials, recommendations |
-| SEC EDGAR | `sec-edgar-downloader` | 10-K/10-Q filings with text extraction |
-| FRED | Federal Reserve | Macroeconomic indicators (GDP, rates) |
-| NewsAPI | newsapi.org | Market news articles |
+The entire system is containerized. You do not need to install Python or dependencies locally.
 
-### 🔮 Analysis & Forecasting
-- **Prophet**: Time-series price forecasting
-- **Technical Indicators**: RSI, MACD, Bollinger Bands, SMA/EMA
-- **FinBERT**: Financial sentiment analysis
+### 1. Prerequisites
+*   **Docker Desktop** (Running)
+*   **LM Studio** (For Local LLM) or a **Groq API Key**.
 
-### 📚 RAG Pipeline
-- **Embeddings**: Sentence-transformers (`all-MiniLM-L6-v2`)
-- **Vector Store**: ChromaDB for document storage
-- **Chunking**: Recursive + SEC-specific strategies
-- **Retrieval**: Hybrid dense + sparse retrieval
+### 2. Configure LM Studio (Critical)
+1.  **Load Model:** `Meta-Llama-3.1-8B-Instruct` (Recommended).
+2.  **Start Server:** Port `1234`.
+3.  **⚠️ Context Length:** Set to **`8192`** (Default 4096 is too small for DeepAgents memory).
 
-### 🔌 LLM Providers
-| Provider | Model | Status |
-|----------|-------|--------|
-| LM Studio (Local) | Any (via OpenAI Compat.) | ✅ Active |
-| MLX (Local) | Llama-3.1-8B-Instruct-4bit | ⚠️ Secondary |
-| Groq | llama-3.3-70b-versatile | ✅ Supported |
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.11+
-- Apple Silicon Mac (for MLX) or cloud API keys
-
-### Installation
+### 3. Environment Setup
+Create a `.env` file in the root directory:
 
 ```bash
-# Clone the repository
-git clone https://github.com/kaushikkumarkr/Quant-Deepagent.git
-cd Quant-Deepagent
+# Required for News/Sentiment
+NEWS_API_KEY=your_key_here
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate
+# Required for Economic Data
+FRED_API_KEY=your_key_here
 
-# Install dependencies
-pip install -e .
+# Optional (if using Cloud LLM)
+GROQ_API_KEY=your_key_here
 ```
 
-### Configuration
-
-Create a `.env` file with your API keys:
-
+### 4. Run the System
 ```bash
-# Required for news data
-NEWS_API_KEY=your_newsapi_key
+# Build and start all microservices
+docker compose up -d --build
 
-# Required for macro data
-FRED_API_KEY=your_fred_key
-
-# LLM Providers (at least one required)
-GROQ_API_KEY=your_groq_key        # Fast cloud inference
-GEMINI_API_KEY=your_gemini_key    # Good tool calling
-# MLX works without API keys (local)
+# Enter the Brain container
+docker exec -it quantmind-core python scripts/cli.py
 ```
 
-### Usage
-
+### 5. Verify Installation
+Run the end-to-end verification script inside the container:
 ```bash
-# Interactive CLI
-python scripts/cli.py
-
-# Example query
-> Analyze NVDA
+docker exec quantmind-core python scripts/verify_lmstudio.py
 ```
+
+---
+
+## 🔬 Observability
+
+Traces and internal thought processes are captured by **Arize Phoenix**.
+
+*   **Dashboard:** [http://localhost:6006](http://localhost:6006)
+*   **Features:**
+    *   View the full "Mind Map" of agent reasoning.
+    *   Inspect raw JSON payloads sent to MCP tools.
+    *   Debug latency and errors.
+
+---
 
 ## 📁 Project Structure
 
+```text
 quantmind/
+├── docker-compose.yml       # Service Definitions (Brain + 4 MCPs + Phoenix)
 ├── src/
-│   ├── agents/              # DeepAgents multi-agent system
-│   │   ├── graph.py         # Main agent graph (Config + Orchestration)
-│   │   ├── prompts/         # Agent system prompts
-│   │   └── tools_registry.py # Tools Registry (MCP Adapters)
-│   ├── llm/
-│   │   ├── router.py        # LLM provider routing
-│   │   └── providers/       # Wrappers (Groq, LM Studio, etc.)
-│   ├── mcp_servers/         # FastMCP Server Implementations
-│   │   ├── yahoo_finance.py
-│   │   ├── sentiment.py
-│   │   ├── forecast.py
-│   │   └── fred.py
-│   └── utils/
-│       ├── mcp_client.py    # Client for StdIO MCP communication
-│       └── observability.py # Arize Phoenix Tracing
+│   ├── agents/              # DeepAgents Logic
+│   │   ├── graph.py         # Main Graph & Sub-Agent Config
+│   │   └── tools_registry.py # Maps Tools -> Docker Environment Vars
+│   ├── tools/               # Robust Tool Implementations
+│   │   ├── financial/       # Yahoo & FRED Logic
+│   │   ├── sentiment/       # NewsAPI Logic
+│   │   └── forecast/        # Prophet Logic
+│   └── llm/                 # Router & Providers
 ├── scripts/
-│   ├── cli.py               # Interactive CLI
-│   ├── verify_full_trace.py # End-to-End DeepAgents Verification
-│   └── verify_mcp_raw.py    # Low-level Data Layer Verification
-├── tests/                   # Integration tests
-└── pyproject.toml
-
-## 🎯 DeepAgents Middleware
-
-This project uses [LangChain DeepAgents](https://github.com/langchain-ai/deepagents) with the following middleware:
-
-| Middleware | Purpose | Tools Provided |
-|------------|---------|----------------|
-| `TodoListMiddleware` | Task planning & tracking | `write_todos`, `read_todos` |
-| `FilesystemMiddleware` | File operations | `ls`, `read_file`, `write_file` |
-| `SubAgentMiddleware` | Task delegation | `task` |
-
-## 🔧 Configuration Options
-
-### LLM Router Priority
-
-The router selects LLMs based on availability and suitability.
-**Current Priority**: `Groq` (Cloud) > `LM Studio` (Local) > `MLX` (Local).
-
-```python
-# src/llm/router.py
-Priority: Groq > LM Studio > MLX
+│   ├── cli.py               # Interactive Chat Interface
+│   ├── verify_all_tools.py  # Microservice Health Check
+│   └── verify_lmstudio.py   # End-to-End Agent Test
+└── README.md
 ```
 
-### Local LLM (LM Studio)
-Ensure LM Studio is running on `http://localhost:1234/v1`. The router mimics OpenAI compatibility.
-```python
-# src/config.py
-lmstudio_url = "http://localhost:1234/v1"
-```
+---
 
-## 📈 Example Output
+## 🛠️ Technology Stack
 
-```
-🚀 QuantMind CLI - Interactive Research Agent
---------------------------------------------------
-Enter ticker or query: Analyze NVDA
+*   **Framework:** [LangChain DeepAgents](https://github.com/langchain-ai/deepagents)
+*   **Protocol:** [Model Context Protocol (MCP)](https://modelcontextprotocol.io) via `fastmcp`
+*   **Transport:** Server-Sent Events (SSE) over HTTP
+*   **Infrastructure:** Docker Compose
+*   **LLM:** Llama 3.1 (Local) / Groq Llama 3.3 (Cloud)
 
-🕵️ Researching: Analyze NVDA...
-
-🔹 Step: model
-🛠️  Call: write_todos ([5 tasks planned])
-🛠️  Call: task (fundamentals_analyst)
-🛠️  Call: task (sentiment_analyst)
-🛠️  Call: task (quantitative_analyst)
-
-🔹 Step: tools
-📝 Fundamentals: P/E 65.2, Revenue $60.9B (+126% YoY)...
-📝 Sentiment: Bullish (0.82 confidence)...
-📝 Forecast: 30-day target $158.50 (+12%)...
-
-🔹 Final Report
-...
-```
-
-## 🔬 Observability (Arize Phoenix)
-The system includes built-in local tracing.
-
-1.  **Run the CLI**: `python scripts/cli.py`
-2.  **View Dashboard**: Open `http://localhost:6006`
-3.  **Features**:
-    *   Visualize full agent execution trees.
-    *   Inspect raw JSON inputs/outputs for every MCP tool call.
-    *   Debug latency and errors.
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-pytest tests/
-
-# Run specific test suite
-pytest tests/unit/test_tools.py -v
-```
+---
 
 ## 📝 License
-
-MIT License - See [LICENSE](LICENSE) for details.
-
-## 🙏 Acknowledgments
-
-- [LangChain DeepAgents](https://github.com/langchain-ai/deepagents) for the agent framework
-- [MLX](https://github.com/ml-explore/mlx) for Apple Silicon inference
-- [yfinance](https://github.com/ranaroussi/yfinance) for financial data
-- [Prophet](https://facebook.github.io/prophet/) for forecasting
+MIT License

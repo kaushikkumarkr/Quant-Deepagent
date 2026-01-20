@@ -9,7 +9,7 @@ logger = setup_logging(__name__)
 class GroqProvider:
     def __init__(self):
         self.api_key = settings.groq_api_key
-        self.model_name = "llama-3.3-70b-versatile" 
+        self.model_name = "meta-llama/llama-4-scout-17b-16e-instruct" 
 
     def is_available(self) -> bool:
         if not self.api_key:

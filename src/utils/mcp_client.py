@@ -7,25 +7,40 @@ logger = setup_logging(__name__)
 
 async def call_mcp_tool(server_path: str, tool_name: str, **kwargs) -> Any:
     """
-    Helper to call a FastMCP server tool via Client.
+    Helper to call a FastMCP server tool via Client (Stdio) or SSE.
     """
     try:
-        # Use Client context manager to connect to the server script
-        async with Client(server_path) as client:
-            result = await client.call_tool(tool_name, kwargs)
+        if server_path.startswith("http"):
+            # SSE Mode (Docker/Remote)
+            from mcp.client.sse import sse_client
+            from mcp.client.session import ClientSession
             
-            # FastMCP result.content is a list of TextContent/ImageContent
-            # We assume simple text output for our tools
-            output = result.content[0].text
-            
-            # Attempt to parse specific stringified outputs
+            async with sse_client(url=server_path) as (read, write):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    result = await session.call_tool(tool_name, arguments=kwargs)
+                    output = result.content[0].text
+        else:
+            # Stdio Mode (Local Script)
+            # Use Client context manager to connect to the server script
+            async with Client(server_path) as client:
+                result = await client.call_tool(tool_name, kwargs)
+                output = result.content[0].text
+        
+        # Attempt to parse specific stringified outputs
+        try:
+            # First try JSON parsing (standard for MCP)
+            return json.loads(output)
+        except:
             try:
-                # Our tools return str(dict), so we can try to parse it
+                # Fallback to literal_eval (for Python dict reprs)
                 import ast
-                return ast.literal_eval(output)
+                val = ast.literal_eval(output)
+                return val
             except:
+                # Return raw text if parsing fails
                 return output
-                
+            
     except Exception as e:
         logger.error(f"MCP Call Error: {e}")
         return {"error": str(e)}
